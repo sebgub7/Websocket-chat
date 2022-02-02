@@ -9,27 +9,34 @@ const loginForm = document.getElementById('welcome-form'),
   messageContentInput = document.getElementById('message-content'),
   messageAuthor = document.querySelector('.message__author');
 let userName;
+const socket = io();
+socket.on('message', ({ author, content }) => addMessage(author, content));
+
 /* ACTIONS */
 function login(event) {
   event.preventDefault();
+
   if (userNameInput.value) {
     userName = userNameInput.value;
     loginForm.classList.remove('show');
     messagesSection.classList.add('show');
+    socket.emit('join', userName);
   } else {
     alert('Name field is empty!');
   }
 }
+
 function sendMessage(event) {
   event.preventDefault();
 
   let msgContent = messageContentInput.value;
 
-  if (msgContent) {
-    addMessage(userName, msgContent);
-    messageContentInput.value = '';
-  } else {
+  if (!msgContent.length) {
     alert('Message field is empty!');
+  } else {
+    addMessage(userName, msgContent);
+    socket.emit('message', { author: userName, content: msgContent });
+    messageContentInput.value = '';
   }
 }
 
@@ -39,6 +46,7 @@ function addMessage(author, msgContent) {
   message.classList.add('message--received');
 
   if (author === userName) message.classList.add('message--self');
+  if (author === 'Chat Bot') message.classList.add('message--chatbot');
 
   message.innerHTML = `
     <h3 class='message__author'>${userName === author ? 'You' : author}</h3>
